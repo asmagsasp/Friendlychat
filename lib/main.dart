@@ -32,14 +32,24 @@ class ChatScreen extends StatefulWidget {
 }
 
 // Add the ChatScreenState class definition in main.dart.
-class ChatScreenState extends State<ChatScreen> {
+class ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   // Cria um Array para armazenar as mensagens enviadas
   final List<ChatMessage> _messages = <ChatMessage>[];
 
   // Para gerenciar as interações com o campo de texto
   final TextEditingController _textController = new TextEditingController();
 
+  // Variavel para controlar a animação
+  final AnimationController animationController;
+
   @override
+
+  void dispose() {
+    for(ChatMessage message in _messages)
+      message.animationController.dispose();
+    super.dispose();
+  }
+
   Widget build(BuildContext context) {
     return new Scaffold(
         appBar: AppBar(
@@ -68,11 +78,18 @@ class ChatScreenState extends State<ChatScreen> {
     _textController.clear;
     ChatMessage message = new ChatMessage(
       text: text,
+      animationController: new AnimationController(
+        duration: new Duration(milliseconds: 500),
+        vsync: this,
+      )
     );
     setState(() {
       _messages.insert(0, message);
     });
+    message.animationController.forward();
   }
+
+
 
   //
   //    Adicione um TextFieldwidget e configure-o da seguinte forma para gerenciar as interações do usuário:
@@ -107,12 +124,19 @@ class ChatScreenState extends State<ChatScreen> {
 }
 
 class ChatMessage extends StatelessWidget {
-  ChatMessage({this.text});
+  ChatMessage({this.text, this.animationController});
+
   final String text;
+  final AnimationController animationController;
 
   @override
   Widget build(BuildContext context) {
-    return new Container(
+    return new SizeTransition(
+      sizeFactor: new CurvedAnimation(
+        parent: animationController,
+        curve: Curves.fastOutSlowIn
+      ),
+     child: new Container(
       margin: const EdgeInsets.symmetric(vertical: 10.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -135,6 +159,7 @@ class ChatMessage extends StatelessWidget {
           )
         ],
       ),
+    )
     );
   }
 }
